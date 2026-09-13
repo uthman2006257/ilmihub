@@ -12,7 +12,7 @@ export default function Home() {
       </nav>
 
       {/* Hero Section */}
-      <section style={{ textAlignment: 'center', padding: '4rem 2rem', background: '#f8fafc', textAlign: 'center' }}>
+      <section style={{ padding: '4rem 2rem', background: '#f8fafc', textAlign: 'center' }}>
         <h1 style={{ fontSize: '2.5rem', color: '#0f172a', marginBottom: '1rem' }}>Barka da zuwa Dandalin IlmiHub</h1>
         <p style={{ fontSize: '1.2rem', color: '#64748b', maxWidth: '600px', margin: '0 auto 2rem auto' }}>
           Koya ilimin kimiyya, sana'o'in kwamfuta, da fasaha cikin sauƙi da yaren gida.
