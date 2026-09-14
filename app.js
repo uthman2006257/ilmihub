@@ -1,125 +1,108 @@
-import { createClient } from '@supabase/supabase-js'
+// Initialization da haɗin Supabase
+import { createClient } from 'https://esm.sh/@supabase/supabase-js'
 
-// Your Supabase credentials integrated directly
-const supabaseUrl = 'https://sajakdazfndrqwfdlzqp.supabase.co' // Ka sanya url ɗinka anan idan ya bambanta, ko ka barshi idan yana daidai da na pro ɗinka
-const supabaseKey = 'sb_publishable_hA9oc89Gcg1M7KoH08fJAQ_BJDb6GeM'
-const supabase = createClient(supabaseUrl, supabaseKey)
+const SUPABASE_URL = 'https://sajakdazfndrqwfdlzqp.supabase.co'
+const SUPABASE_ANON_KEY = 'sb_publishable_hA9oc89Gcg1M7KoH08fJAQ_BJDb6GeM'
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
-// 1. Initialize user when Telegram Mini App opens
+// Telegram WebApp User Data
+const tg = window.Telegram.WebApp;
+tg.expand();
+
+const user = tg.initDataUnsafe?.user;
+let telegramId = user ? user.id : null;
+let username = user ? user.username || user.first_name : 'Guest';
+
+// UI Elements & State
+let balance = 0;
+
 async function initUser() {
-    const tg = window.Telegram?.WebApp;
-    const user = tg?.initDataUnsafe?.user;
-
-    if (!user) {
-        console.log("Telegram user not found.");
-        return;
+    if (!telegramId) {
+        // Idan ana gwadawa a browser ta al'ada (ba a Telegram ba)
+        telegramId = 123456789; 
     }
 
-    const telegramId = user.id;
-    const username = user.username || user.first_name;
-
-    // Check if user already exists in Supabase
-    let { data: existingUser, error } = await supabase
+    // Duba ko mai amfani yana cikin Supabase
+    let { data, error } = await supabase
         .from('users')
         .select('*')
         .eq('telegram_id', telegramId)
         .single();
 
-    if (!existingUser) {
-        const startParam = tg.initDataUnsafe?.start_param;
-        let referredBy = null;
-
-        if (startParam && startParam.startsWith('ref_')) {
-            referredBy = parseInt(startParam.replace('ref_', ''));
-        }
-
-        // Create new user account with 0 ZVR balance
-        const { data: newUser, error: insertError } = await supabase
+    if (!data) {
+        // Idan sabon user ne, sai mu ƙirƙira shi a Supabase
+        const { error: insertError } = await supabase
             .from('users')
-            .insert([
-                { 
-                    telegram_id: telegramId, 
-                    username: username, 
-                    balance_zvr: 0, 
-                    referred_by: referredBy,
-                    level: 1,
-                    daily_streak: 0
-                }
-            ])
-            .select()
-            .single();
-
-        if (insertError) {
-            console.error("Error creating user account:", insertError);
-        } else {
-            console.log("New user account created successfully with 0 ZVR!");
-            if (referredBy) {
-                await giveReferralBonus(referredBy);
-            }
-        }
+            .insert([{ 
+                telegram_id: telegramId, 
+                username: username, 
+                balance_zvr: 0, 
+                level: 1, 
+                daily_streak: 1 
+            }]);
+            
+        if (insertError) console.error("Kuskure wajen ƙirƙirar user:", insertError);
     } else {
-        console.log("User already exists:", existingUser);
-        updateUI(existingUser.balance_zvr);
+        balance = data.balance_zvr;
+        updateUI();
     }
 }
 
-// 2. Give referral bonus (+5,000 ZVR)
-async function giveReferralBonus(referrerId) {
-    let { data: referrer } = await supabase
-        .from('users')
-        .select('*')
-        .eq('telegram_id', referrerId)
-        .single();
+// Aikin Mining (Latsawa domin tara ZVR)
+async function claimMining() {
+    balance += 10; // Ƙarin ZVR 10 a kowane click
+    updateUI();
 
-    if (referrer) {
-        const newBalance = (referrer.balance_zvr || 0) + 5000;
-        await supabase
-            .from('users')
-            .update({ balance_zvr: newBalance })
-            .eq('telegram_id', referrerId);
-    }
-}
-
-// 3. Create Club restriction (Requires minimum 10,000 ZVR)
-async function createClub(clubName) {
-    const tg = window.Telegram?.WebApp;
-    const telegramId = tg?.initDataUnsafe?.user?.id;
-
-    if (!telegramId) return;
-
-    let { data: user } = await supabase
-        .from('users')
-        .select('*')
-        .eq('telegram_id', telegramId)
-        .single();
-
-    if (!user) return;
-
-    if (user.balance_zvr < 10000) {
-        alert("You need at least 10,000 ZVR to create a Club!");
-        return;
-    }
-
+    // Adana sabon balance a Supabase
     const { error } = await supabase
-        .from('clubs')
-        .insert([
-            { club_name: clubName, creator_id: telegramId, members_count: 1 }
-        ]);
+        .from('users')
+        .update({ balance_zvr: balance })
+        .eq('telegram_id', telegramId);
 
     if (error) {
-        alert("Error creating club.");
-    } else {
-        alert("Club created successfully!");
+        console.error("Kuskure wajen adana mining:", error);
     }
 }
 
-// 4. Update UI with balance
-function updateUI(balance) {
-    const balanceElement = document.getElementById('zvr-balance');
+// Daily Check-in Logic
+async function dailyCheckIn() {
+    let { data } = await supabase
+        .from('users')
+        .select('daily_streak, balance_zvr')
+        .eq('telegram_id', telegramId)
+        .single();
+
+    if (data) {
+        let newStreak = (data.daily_streak || 0) + 1;
+        let newBalance = data.balance_zvr + 50; // Ladar daily check-in
+        
+        balance = newBalance;
+        updateUI();
+
+        await supabase
+            .from('users')
+            .update({ daily_streak: newStreak, balance_zvr: newBalance })
+            .eq('telegram_id', telegramId);
+            
+        alert("An ba da ladarka ta yau! +50 ZVR");
+    }
+}
+
+function updateUI() {
+    const balanceElement = document.getElementById('balance-display');
     if (balanceElement) {
-        balanceElement.innerText = balance.toLocaleString();
+        balanceElement.innerText = balance + " ZVR";
     }
 }
 
-// Run initialization on load
-window.onload = initUser;
+// Tura aiki yayin shigowa
+window.onload = () => {
+    initUser();
+    
+    // Haɗa maɓallan HTML ɗinka da waɗannan ayyukan
+    const mineBtn = document.getElementById('mine-btn');
+    if (mineBtn) mineBtn.onclick = claimMining;
+
+    const checkinBtn = document.getElementById('checkin-btn');
+    if (checkinBtn) checkinBtn.onclick = dailyCheckIn;
+};
