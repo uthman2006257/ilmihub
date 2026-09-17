@@ -1,9 +1,9 @@
-import { createClient } from '@supabase/supabase-js';
+const { createClient } = require('@supabase/supabase-js');
 
-const supabase = createClient(
-  process.env.SUPABASE_URL, 
-  process.env.SUPABASE_ANON_KEY
-);
+// Amfani da Environment Variables domin tsaro
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -14,7 +14,8 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  const username = (req.query.username || 'OPERATOR').toUpperCase();
+  // Tabbatar an ɗauki ainihin ID ko suna ta yadda asusun mutane ba zasu haɗu ba
+  const username = (req.query.username || req.query.id || 'USER_' + Math.floor(Math.random() * 1000000)).toUpperCase();
   const action = req.query.action || 'home';
 
   try {
@@ -30,7 +31,7 @@ export default async function handler(req, res) {
         .insert([{ username: username, balance_zvr: 100.00, level: 1, daily_streak: 1 }])
         .select()
         .single();
-      
+
       if (insertError) throw insertError;
       currentUser = newUser;
     }
