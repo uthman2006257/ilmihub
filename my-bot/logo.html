@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZAVQERO Logo Generator</title>
+    <style>
+        body {
+            background-color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .logo-container {
+            background: #000;
+            width: 400px;
+            height: 400px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border: 2px solid #111;
+            border-radius: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.9);
+        }
+        /* Hooded Figure Graphic CSS */
+        .hood-icon {
+            width: 130px;
+            height: 110px;
+            position: relative;
+            margin-bottom: 25px;
+        }
+        /* Outer Hood */
+        .hood-top {
+            position: absolute;
+            top: 0;
+            left: 25px;
+            width: 80px;
+            height: 65px;
+            background: #ffffff;
+            border-radius: 50% 50% 40% 40%;
+            transform: rotate(-5deg);
+        }
+        .hood-top::before {
+            content: '';
+            position: absolute;
+            top: -5px;
+            left: 25px;
+            width: 35px;
+            height: 25px;
+            background: #ffffff;
+            border-radius: 50%;
+            transform: rotate(25deg);
+        }
+        /* Face Shadow / Opening */
+        .hood-face {
+            position: absolute;
+            top: 25px;
+            left: 42px;
+            width: 46px;
+            height: 45px;
+            background: #000000;
+            border-radius: 50%;
+        }
+        /* Shoulders */
+        .hood-shoulders {
+            position: absolute;
+            bottom: 0;
+            left: 5px;
+            width: 120px;
+            height: 50px;
+            background: #ffffff;
+            border-radius: 40px 40px 10px 10px;
+        }
+        /* Hood folds/lines detail */
+        .fold-1, .fold-2 {
+            position: absolute;
+            background: #000;
+            height: 25px;
+            width: 3px;
+            top: 35px;
+            transform: rotate(35deg);
+        }
+        .fold-1 { left: 32px; }
+        .fold-2 { right: 32px; transform: rotate(-35deg); }
+
+        /* Brand Name Text */
+        .brand-text {
+            color: #ffffff;
+            font-size: 38px;
+            font-weight: 900;
+            letter-spacing: 6px;
+            font-family: 'Arial Black', Gadget, sans-serif;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="logo-container">
+        <div class="hood-icon">
+            <div class="hood-top"></div>
+            <div class="hood-face"></div>
+            <div class="fold-1"></div>
+            <div class="fold-2"></div>
+            <div class="hood-shoulders"></div>
+        </div>
+        <div class="brand-text">ZAVQERO</div>
+    </div>
+
+</body>
+</html>

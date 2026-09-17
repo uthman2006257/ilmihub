@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ZAVQERO APP</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+        body { background-color: #000000; color: #ffffff; display: flex; flex-direction: column; height: 100vh; overflow: hidden; position: relative; }
+        
+        /* Subtle Background Logo Watermark matching your style */
+        body::before {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 320px;
+            height: 320px;
+            background: url('logo.png') no-repeat center center;
+            background-size: contain;
+            opacity: 0.08;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Loading Screen */
+        #loading-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000000; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 999; transition: opacity 0.5s ease; }
+        .loader-logo-img { width: 90px; height: 90px; border-radius: 24px; object-fit: cover; margin-bottom: 16px; border: 1px solid #28282c; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
+        .loader-logo { font-size: 22px; font-weight: 800; letter-spacing: 2px; color: #fff; margin-bottom: 12px; }
+        .spinner { width: 28px; height: 28px; border: 3px solid #1a1a1e; border-top: 3px solid #fff; border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 12px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .loader-text { font-size: 11px; color: #666; letter-spacing: 1px; font-weight: 600; }
+
+        /* Top Header */
+        .header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; font-size: 15px; z-index: 1; }
+        .header-left { display: flex; align-items: center; gap: 12px; }
+        .avatar { width: 38px; height: 38px; background: #161618; border-radius: 50%; object-fit: cover; border: 1px solid #28282c; }
+        .username-info { font-weight: 700; font-size: 14px; }
+        .user-handle { font-size: 12px; color: #777; margin-top: 1px; }
+        .header-right { display: flex; gap: 18px; color: #aaa; font-size: 18px; cursor: pointer; }
+
+        /* Main Content */
+        .content { flex: 1; overflow-y: auto; padding: 10px 20px 90px 20px; display: none; flex-direction: column; gap: 12px; z-index: 1; }
+        .content.active { display: flex; }
+
+        /* Cards Style Matching the Image */
+        .card { background: rgba(12, 12, 14, 0.85); backdrop-filter: blur(10px); border: 1px solid #1c1c20; border-radius: 20px; padding: 18px; }
+        .card-title { font-size: 10px; color: #777; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
+        .card-main-title { font-size: 16px; font-weight: 700; margin-top: 4px; display: flex; align-items: center; gap: 6px; }
+        .card-desc { font-size: 12px; color: #666; margin-top: 4px; }
+
+        /* Page Headings */
+        .page-title { font-size: 28px; font-weight: 800; margin-bottom: 4px; }
+        .page-sub { font-size: 12px; color: #777; margin-bottom: 16px; font-weight: 500; }
+
+        /* Home Specific balance styling */
+        .balance-section { margin: 8px 0; }
+        .currency-label { font-size: 11px; color: #777; font-weight: 700; letter-spacing: 1px; }
+        .balance-amount { font-size: 46px; font-weight: 800; letter-spacing: -1.5px; margin: 2px 0 12px 0; }
+        .view-btn { background: #0c0c0e; border: 1px solid #222226; color: #fff; padding: 9px 20px; border-radius: 30px; font-size: 12px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+        .view-btn:active { background: #18181c; }
+
+        .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
+        .action-box { background: rgba(12, 12, 14, 0.85); backdrop-filter: blur(10px); border: 1px solid #1c1c20; border-radius: 20px; padding: 16px; cursor: pointer; }
+        .action-box:active { background: #161619; }
+        .action-box-value { font-size: 16px; font-weight: 700; margin-top: 8px; color: #fff; }
+
+        /* Mission Checkboxes / Items */
+        .mission-item { display: flex; justify-content: space-between; align-items: center; background: rgba(12, 12, 14, 0.85); backdrop-filter: blur(10px); border: 1px solid #1c1c20; border-radius: 20px; padding: 18px; margin-bottom: 10px; }
+        .mission-btn { background: #18181c; border: 1px solid #333; color: #fff; padding: 8px 16px; border-radius: 20px; font-size: 11px; font-weight: 700; cursor: pointer; }
+
+        /* Friends List & Leaderboard Items */
+        .list-item { display: flex; justify-content: space-between; align-items: center; background: rgba(12, 12, 14, 0.85); border: 1px solid #1c1c20; border-radius: 16px; padding: 16px; margin-bottom: 8px; font-size: 13px; font-weight: 600; }
+
+        /* Bottom Navigation Bar matching the image */
+        .nav-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(0, 0, 0, 0.95); backdrop-filter: blur(15px); border-top: 1px solid #111115; display: flex; justify-content: space-around; padding: 10px 0 22px 0; z-index: 100; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 5px; color: #666; font-size: 10px; cursor: pointer; font-weight: 700; letter-spacing: 0.5px; }
+        .nav-item.active { color: #fff; }
+        .nav-icon { font-size: 18px; }
+        
+        .msg { font-size: 12px; margin-top: 8px; color: #10b981; font-weight: 600; min-height: 18px; }
+    </style>
+</head>
+<body>
+
+    <!-- Loading Screen -->
+    <div id="loading-screen">
+        <img src="logo.png" class="loader-logo-img" alt="Logo">
+        <div class="loader-logo">ZAVQERO</div>
+        <div class="spinner"></div>
+        <div class="loader-text">LOADING APP...</div>
+    </div>
+
+    <!-- Header -->
+    <div class="header">
+        <div class="header-left">
+            <img src="logo.png" class="avatar" alt="Avatar">
+            <div>
+                <div class="username-info" id="nav-username">GAMING PC/ANDROID</div>
+                <div class="user-handle" id="nav-handle">@GAMINGPC13</div>
+            </div>
+        </div>
+        <div class="header-right">
+            <span>⌄</span>
+            <span>⋮</span>
+        </div>
+    </div>
+
+    <!-- TAB 1: HOME -->
+    <div id="tab-Home" class="content active">
+        <div class="card" style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <img src="logo.png" style="width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 1px solid #28282c;" alt="Club">
+                <div>
+                    <div style="font-size: 12px; color: #777; font-weight: 700;">YOUR ZAVQERO CLUB</div>
+                    <div style="font-size: 14px; font-weight: 700; margin-top: 1px;">ZAVQERO SQUAD 🇳🇬</div>
+                </div>
+            </div>
+            <div style="color: #666; font-size: 16px;">↗</div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">COLOUR HUNT</div>
+            <div class="card-main-title" id="streak-text">Day 2 of 7</div>
+            <div class="card-desc">0/5 colours found today</div>
+        </div>
+
+        <div class="balance-section">
+            <div class="currency-label">ZVR</div>
+            <div class="balance-amount" id="balance">0</div>
+            <button class="view-btn" onclick="doAction('home')">VIEW ZVR</button>
+        </div>
+
+        <div style="font-size: 13px; color: #777; font-weight: 700; letter-spacing: 0.5px; margin: 4px 0;">MAKE TON GREAT AGAIN</div>
+
+        <div class="action-grid">
+            <div class="action-box" onclick="doAction('mine')">
+                <div class="card-title">TODAY'S MISSIONS</div>
+                <div class="action-box-value">+10 ZVR</div>
+            </div>
+            <div class="action-box" onclick="doAction('checkin')">
+                <div class="card-title">REFERRAL EARNINGS</div>
+                <div class="action-box-value" id="home-ref-val">0</div>
+            </div>
+        </div>
+        <div class="msg" id="message"></div>
+    </div>
+
+    <!-- TAB 2: MISSIONS -->
+    <div id="tab-Missions" class="content">
+        <div class="page-title">Missions</div>
+        <div class="page-sub">Simple actions. Real score. No noise.</div>
+
+        <div class="card">
+            <div class="card-title">Daily Check-in</div>
+            <div class="card-main-title">+1,000 ZVR</div>
+            <div class="card-desc" style="margin-bottom: 14px;">Day 2 of 7 · max reward. Miss a day and streak restarts.</div>
+            <button class="mission-btn" style="width: 100%; background: #fff; color: #000; font-weight: 800;" onclick="doAction('checkin')">CHECK IN</button>
+        </div>
+
+        <div class="mission-item">
+            <div>
+                <div style="font-weight: 700; font-size: 14px;">Join ZAVQERO Channel</div>
+                <div style="font-size: 12px; color: #777; margin-top: 3px;">+5,000 ZVR</div>
+            </div>
+            <button class="mission-btn" onclick="alert('Completed!')">CLAIM</button>
+        </div>
+
+        <div class="mission-item">
+            <div>
+                <div style="font-weight: 700; font-size: 14px;">Follow on X (Twitter)</div>
+                <div style="font-size: 12px; color: #777; margin-top: 3px;">+5,000 ZVR</div>
+            </div>
+            <button class="mission-btn" onclick="alert('Completed!')">CLAIM</button>
+        </div>
+    </div>
+
+    <!-- TAB 3: FRIENDS -->
+    <div id="tab-Friends" class="content">
+        <div class="page-title">Friends</div>
+        <div class="page-sub">Invite your friends into ZAVQERO. Earn 10% of every ZVR earned.</div>
+
+        <div class="card">
+            <div class="card-title">REFERRAL LINK</div>
+            <div style="font-size: 12px; color: #aaa; margin: 8px 0 14px 0; word-break: break-all;" id="ref-link">https://t.me/Zavqerobot?start=REF_GAMINGPC13</div>
+            <div style="display: flex; gap: 10px;">
+                <button class="mission-btn" style="flex: 1; background: #fff; color: #000; font-weight: 800;" onclick="copyRefLink()">COPY</button>
+                <button class="mission-btn" style="flex: 1;" onclick="shareRefLink()">SHARE</button>
+            </div>
+        </div>
+
+        <div class="action-grid" style="margin-top: 0;">
+            <div class="card">
+                <div class="card-title">REFERRALS</div>
+                <div style="font-size: 22px; font-weight: 800; margin-top: 6px;" id="ref-count">0</div>
+            </div>
+            <div class="card">
+                <div class="card-title">EARNINGS</div>
+                <div style="font-size: 22px; font-weight: 800; margin-top: 6px; color: #fff;" id="ref-earnings">0</div>
+            </div>
+        </div>
+
+        <div style="font-size: 12px; color: #777; margin-top: 12px; font-weight: 700;">REFERRAL LIST</div>
+        <div id="referral-list-container">
+            <div style="font-size: 12px; color: #555; padding: 10px 0;">No referrals yet. Invite friends to grow your list!</div>
+        </div>
+    </div>
+
+    <!-- TAB 4: RANKS -->
+    <div id="tab-Ranks" class="content">
+        <div class="page-title">Leaderboard</div>
+        <div class="page-sub" id="rank-sub">You are ranked #1 of 1.</div>
+
+        <div style="display: flex; background: rgba(12, 12, 14, 0.85); padding: 4px; border-radius: 20px; border: 1px solid #1c1c20; margin-bottom: 12px;">
+            <button style="flex: 1; background: #fff; color: #000; border: none; padding: 9px; border-radius: 16px; font-weight: 800; font-size: 12px;">PLAYERS</button>
+            <button style="flex: 1; background: transparent; color: #777; border: none; padding: 9px; border-radius: 16px; font-weight: 800; font-size: 12px;">CLUBS</button>
+        </div>
+
+        <div id="leaderboard-container">
+            <!-- Dynamic Leaderboard list -->
+        </div>
+    </div>
+
+    <!-- TAB 5: AIRDROP -->
+    <div id="tab-Airdrop" class="content">
+        <div class="page-title">Airdrop</div>
+        <div class="page-sub">Your ZVR allocation on the TON Network.</div>
+
+        <div class="card" style="text-align: center;">
+            <div class="card-title" style="margin-bottom: 12px;">AIRDROP COUNTDOWN</div>
+            <div style="display: flex; justify-content: space-around; font-weight: 800; font-size: 22px;">
+                <div><span id="cd-days">90</span> <span style="display:block; font-size:10px; color:#777; margin-top:2px;">DAYS</span></div>
+                <div><span id="cd-hrs">00</span> <span style="display:block; font-size:10px; color:#777; margin-top:2px;">HRS</span></div>
+                <div><span id="cd-min">00</span> <span style="display:block; font-size:10px; color:#777; margin-top:2px;">MIN</span></div>
+                <div><span id="cd-sec">00</span> <span style="display:block; font-size:10px; color:#777; margin-top:2px;">SEC</span></div>
+            </div>
+        </div>
+
+        <div class="card" style="text-align: center;">
+            <div class="card-title">TOTAL ZVR ALLOCATION</div>
+            <div style="font-size: 34px; font-weight: 800; margin: 10px 0;" id="airdrop-allocation">0</div>
+            <div class="card-desc">Tokens claimable at distribution.</div>
+        </div>
+
+        <button class="mission-btn" style="width: 100%; padding: 14px; background: #0c0c0e; border: 1px solid #222; font-weight: 800;">$ZVR PRESALE</button>
+        <button class="mission-btn" style="width: 100%; padding: 14px; background: #fff; color: #000; font-weight: 800;" onclick="alert('Wallet connection coming soon!')">CONNECT WALLET</button>
+    </div>
+
+    <!-- Bottom Navigation Bar -->
+    <div class="nav-bar">
+        <div class="nav-item active" onclick="switchTab(this, 'Home')">
+            <span class="nav-icon">🏠</span>
+            <span>HOME</span>
+        </div>
+        <div class="nav-item" onclick="switchTab(this, 'Missions')">
+            <span class="nav-icon">🎯</span>
+            <span>MISSIONS</span>
+        </div>
+        <div class="nav-item" onclick="switchTab(this, 'Friends')">
+            <span class="nav-icon">👥</span>
+            <span>FRIENDS</span>
+        </div>
+        <div class="nav-item" onclick="switchTab(this, 'Ranks')">
+            <span class="nav-icon">🏆</span>
+            <span>RANKS</span>
+        </div>
+        <div class="nav-item" onclick="switchTab(this, 'Airdrop')">
+            <span class="nav-icon">🎁</span>
+            <span>AIRDROP</span>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = {
+            username: "GAMINGPC13",
+            name: "GAMING PC/ANDROID",
+            balance: 219786,
+            level: 1,
+            referrals: []
+        };
+
+        let allPlayers = [
+            { username: "@Chizo1...", balance: 52524408 },
+            { username: "@oxmon...", balance: 48581368 },
+            { username: "@lhvu22", balance: 38272797 },
+            { username: "@Karim08147", balance: 7528 }
+        ];
+
+        function checkReferralOnLoad() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const startParam = urlParams.get('start');
+            
+            if (!localStorage.getItem('zavqero_reward_claimed')) {
+                let bonus = 219786;
+                let welcomeMsg = "Welcome! Initial ZVR loaded.";
+
+                if (startParam && startParam.startsWith('REF_')) {
+                    const referrerName = startParam.replace('REF_', '');
+                    bonus = 219786 + Math.floor(Math.random() * (1000 - 200 + 1)) + 200;
+                    welcomeMsg = `🎉 Welcome via @${referrerName}! Referral bonus added!`;
+                }
+
+                currentUser.balance = bonus;
+                localStorage.setItem('zavqero_reward_claimed', 'true');
+                localStorage.setItem('zavqero_balance', currentUser.balance);
+
+                setTimeout(() => {
+                    document.getElementById('message').style.color = '#10b981';
+                    document.getElementById('message').innerText = welcomeMsg;
+                }, 800);
+            } else {
+                const savedBal = localStorage.getItem('zavqero_balance');
+                if (savedBal) currentUser.balance = Number(savedBal);
+            }
+        }
+
+        async function loadData() {
+            checkReferralOnLoad();
+            
+            setTimeout(() => {
+                const loader = document.getElementById('loading-screen');
+                loader.style.opacity = '0';
+                setTimeout(() => loader.style.display = 'none', 500);
+            }, 1000);
+
+            updateUI();
+        }
+
+        function updateUI() {
+            document.getElementById('balance').innerText = currentUser.balance.toLocaleString();
+            document.getElementById('airdrop-allocation').innerText = currentUser.balance.toLocaleString();
+            document.getElementById('nav-username').innerText = currentUser.name;
+            document.getElementById('nav-handle').innerText = "@" + currentUser.username;
+
+            document.getElementById('ref-count').innerText = currentUser.referrals.length;
+            const totalEarnings = currentUser.referrals.reduce((sum, r) => sum + r.earned, 0);
+            document.getElementById('ref-earnings').innerText = totalEarnings.toLocaleString();
+            document.getElementById('home-ref-val').innerText = totalEarnings.toLocaleString();
+            
+            const refListContainer = document.getElementById('referral-list-container');
+            if (currentUser.referrals.length === 0) {
+                refListContainer.innerHTML = `<div style="font-size: 12px; color: #555; padding: 10px 0;">No referrals yet. Invite friends to grow your list!</div>`;
+            } else {
+                refListContainer.innerHTML = currentUser.referrals.map(r => `
+                    <div class="list-item">
+                        <div>${r.username}</div>
+                        <div style="color: #fff;">+${r.earned.toLocaleString()} ZVR</div>
+                    </div>
+                `).join('');
+            }
+
+            let leaderboardList = [
+                ...allPlayers,
+                { username: "@" + currentUser.username, balance: currentUser.balance, isMe: true }
+            ];
+            leaderboardList.sort((a, b) => b.balance - a.balance);
+
+            const myIndex = leaderboardList.findIndex(p => p.isMe) + 1;
+            document.getElementById('rank-sub').innerText = `You are ranked #${myIndex} of ${leaderboardList.length}.`;
+
+            const rankContainer = document.getElementById('leaderboard-container');
+            rankContainer.innerHTML = leaderboardList.map((p, index) => {
+                let color = "#fff";
+                if(index === 0) color = "#ffd700";
+                else if(index === 1) color = "#c0c0c0";
+                else if(index === 2) color = "#cd7f32";
+
+                return `
+                    <div class="list-item" ${p.isMe ? 'style="border: 1px solid #fff;"' : ''}>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span style="color: ${color}; font-weight: 800;">${index + 1}</span>
+                            <span>${p.username} ${p.isMe ? '(You)' : ''}</span>
+                        </div>
+                        <div style="font-weight: 800;">${p.balance.toLocaleString()}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function doAction(actionType) {
+            const msgEl = document.getElementById('message');
+            if(actionType !== 'home') msgEl.innerText = "Processing...";
+            try {
+                if(actionType === 'mine') currentUser.balance += 10;
+                if(actionType === 'checkin') currentUser.balance += 50;
+                
+                msgEl.style.color = '#10b981';
+                msgEl.innerText = 'Success! Balance updated.';
+                localStorage.setItem('zavqero_balance', currentUser.balance);
+                updateUI();
+            } catch(e) {
+                msgEl.style.color = '#ef4444';
+                msgEl.innerText = 'Action failed.';
+            }
+        }
+
+        function copyRefLink() {
+            navigator.clipboard.writeText("https://t.me/Zavqerobot?start=REF_" + currentUser.username);
+            alert('Referral link copied!');
+        }
+
+        function shareRefLink() {
+            if (navigator.share) {
+                navigator.share({ title: 'ZAVQERO', text: 'Join me on ZAVQERO and earn tokens!', url: 'https://t.me/Zavqerobot?start=REF_' + currentUser.username });
+            } else {
+                copyRefLink();
+            }
+        }
+
+        let targetTime = localStorage.getItem('zavqero_airdrop_target');
+        if (!targetTime) {
+            targetTime = new Date().getTime() + (90 * 24 * 60 * 60 * 1000);
+            localStorage.setItem('zavqero_airdrop_target', targetTime);
+        }
+
+        function updateCountdown() {
+            const now = new Date().getTime();
+            const distance = targetTime - now;
+
+            if (distance > 0) {
+                const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const realMins = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+                document.getElementById('cd-days').innerText = String(days).padStart(2, '0');
+                document.getElementById('cd-hrs').innerText = String(hours).padStart(2, '0');
+                document.getElementById('cd-min').innerText = String(realMins).padStart(2, '0');
+                document.getElementById('cd-sec').innerText = String(seconds).Caption = String(seconds).padStart(2, '0');
+                document.getElementById('cd-sec').innerText = String(seconds).padStart(2, '0');
+            }
+        }
+        setInterval(updateCountdown, 1000);
+        updateCountdown();
+
+        function switchTab(el, tabName) {
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            document.querySelectorAll('.content').forEach(content => content.classList.remove('active'));
+            
+            el.classList.add('active');
+            document.getElementById('tab-' + tabName).classList.add('active');
+        }
+
+        loadData();
+    </script>
+</body>
+</html>
